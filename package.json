@@ -1,0 +1,23 @@
+{
+  "name": "linkedinsearch",
+  "version": "1.0.0",
+  "description": "Linkedin Search Clicker",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "linkedinsearch"
+  },
+  "author": "Alexander Swan",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "puppeteer": "^19.11.0",
+    "puppeteer-core": "^19.11.1",
+    "readline-sync": "^1.4.10"
+  }
+}
