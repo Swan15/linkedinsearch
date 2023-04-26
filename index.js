@@ -1,20 +1,20 @@
 const readlineSync = require('readline-sync')
 const puppeteer = require('puppeteer')
 const cheerio = require('cheerio')
-const os = require('os')
+// const os = require('os')
 
-const getChromiumExecutablePath = () => {
-    const platform = os.platform();
-    console.log(platform)
-    if (platform === 'win32') {
-      return 'chrome.exe';
-    } else if (platform === 'darwin') {
-      return 'Chromium.app/Contents/MacOS/Chromium';
-    } else if (platform === 'linux') {
-      return 'chrome';
-    }
-    throw new Error('Unsupported platform: ' + platform);
-  };
+// const getChromiumExecutablePath = () => {
+//     const platform = os.platform();
+//     console.log(platform)
+//     if (platform === 'win32') {
+//       return 'chrome.exe';
+//     } else if (platform === 'darwin') {
+//       return 'Chromium.app/Contents/MacOS/Chromium';
+//     } else if (platform === 'linux') {
+//       return 'chrome';
+//     }
+//     throw new Error('Unsupported platform: ' + platform);
+//   };
 
 const scroll = async (page) => {
     await page.waitForSelector('button.t-12.button--unstyled');
@@ -34,7 +34,7 @@ const linkedin = async () => {
         const puppeteer = require('puppeteer');
 
         browser = await puppeteer.launch({
-            executablePath: getChromiumExecutablePath(),
+            // executablePath: getChromiumExecutablePath(),
             headless: true,
             defaultViewport: null,
             args: ['--start-maximized']
