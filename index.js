@@ -1,41 +1,74 @@
 const readlineSync = require('readline-sync')
 const puppeteer = require('puppeteer')
 const cheerio = require('cheerio')
-// const os = require('os')
+const os = require('os')
+const fs = require('fs')
 
 // const getChromiumExecutablePath = () => {
 //     const platform = os.platform();
 //     console.log(platform)
 //     if (platform === 'win32') {
-//       return 'chrome.exe';
+//       return 'chrome-win/chrome.exe';
 //     } else if (platform === 'darwin') {
-//       return 'Chromium.app/Contents/MacOS/Chromium';
-//     } else if (platform === 'linux') {
-//       return 'chrome';
+//       return 'chrome-mac/Chromium.app/Contents/MacOS/Chromium';
 //     }
 //     throw new Error('Unsupported platform: ' + platform);
-//   };
+// };
+function removeAfterComma(str) {
+    const commaIndex = str.indexOf(',');
+    if (commaIndex === -1) {
+      return str; // no comma found, return original string
+    }
+    return str.slice(0, commaIndex);
+  }
+
+const appendUrlToFile = (url, filename = 'visitedaccounts.txt') => {
+    try {
+        if (!fs.existsSync(filename)) {
+            fs.writeFileSync(filename, '');
+        }
+
+        fs.appendFileSync(filename, url + '\n');
+    } catch (err) {
+        console.error('Error appending URL to file:', err);
+    }
+};
+
+
+const readFileAsArray = (filename = 'visitedaccounts.txt') => {
+    try {
+      const data = fs.readFileSync(filename, 'utf-8');
+      const urlArray = data.trim().split('\n');
+      return urlArray;
+    } catch (err) {
+      console.error('Error reading file:', err);
+      return null;
+    }
+  };
 
 const scroll = async (page) => {
     await page.waitForSelector('button.t-12.button--unstyled');
 
     // Click the button
     await page.click('button.t-12.button--unstyled');
-    // Scroll down the page using the "Page Down" key
-    for (let i = 0; i < 10; i++) { // Change the number 10 to the desired number of times you want to press "Page Down"
+    await page.mouse.move(900, 900)
+    
+     // Scroll down the page using the "Page Down" key
+    for (let i = 0; i < 20; i++) { // Change the number 10 to the desired number of times you want to press "Page Down"
+       
         await page.keyboard.press("PageDown");
         await page.waitForTimeout(1000); // Adjust the delay as needed to give the
     }
 }
 const linkedin = async () => {
-    
+    const visitedAccounts = readFileAsArray();
     let browser
     try {
         const puppeteer = require('puppeteer');
 
         browser = await puppeteer.launch({
             // executablePath: getChromiumExecutablePath(),
-            headless: true,
+            // headless: false,
             defaultViewport: null,
             args: ['--start-maximized']
             // other options...
@@ -84,25 +117,44 @@ const linkedin = async () => {
         for (const link of links) {
             await page.goto(`https://www.linkedin.com${link}`);
 
+            console.log(link);
+            let page_num = 1;
             while (true) {
+
+                console.log('page: ', page_num)
                 await page.waitForSelector('a[data-control-name="view_lead_panel_via_search_lead_name"]');
                 await scroll(page);
+                
+                let elements = await page.$$('a[data-control-name="view_lead_panel_via_search_lead_name"]');
 
-                const elements = await page.$$('a[data-control-name="view_lead_panel_via_search_lead_name"]');
-                console.log(link);
-
-                // Loop through the elements and click each one
+                
                 const page2 = await browser.newPage();
                 const hrefs = [];
+                if (elements.length === 0) {
+                    console.log('timeout')
+                    await page.timeout(30000) // 5 minutes 300000 milliseconds
+                    await page.goto(`https://www.linkedin.com${link}`);
+                    await page.waitForSelector('a[data-control-name="view_lead_panel_via_search_lead_name"]');
+                    await scroll(page);
+                    elements = await page.$$('a[data-control-name="view_lead_panel_via_search_lead_name"]');
+                }
+
+                // Loop through the elements and click each one
                 for (const element of elements) {
                     const href = await page.evaluate((el) => el.getAttribute('href'), element);
                     hrefs.push(href);
                 }
+
                 for (const account of hrefs) {
-                    await page2.goto(`https://www.linkedin.com${account}`);
-                    // Add a delay if needed, to give the page time to process each click and load new content
-                    await page2.waitForTimeout(1000);
-                    console.log('clicking');
+                    if (!visitedAccounts.includes(removeAfterComma(account))) {
+                        await page2.goto(`https://www.linkedin.com${account}`);
+                        // Add a delay if needed, to give the page time to process each click and load new content
+                        await page2.waitForTimeout(3000);
+                        console.log('clicking');
+                        appendUrlToFile(removeAfterComma(account));
+                    } else {
+                        console.log("Already viewed")
+                    }
                 }
                 page2.close();
 
@@ -113,6 +165,7 @@ const linkedin = async () => {
 
                     // Add a delay if needed, to give the page time to process the click and load new content
                     await page.waitForTimeout(1000);
+                    page_num++;
                 } else {
                     // Break the loop if the element doesn't exist
 
